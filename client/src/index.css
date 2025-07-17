@@ -73,6 +73,13 @@
   
   .document-reader {
     scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .smooth-scroll {
+    scroll-behavior: smooth;
+    transform: translateZ(0);
+    will-change: scroll-position;
   }
   
   .sidebar-nav {
@@ -99,6 +106,20 @@
   
   .content-section {
     scroll-margin-top: 2rem;
+    transform: translateZ(0);
+  }
+  
+  .sidebar-item {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateZ(0);
+  }
+  
+  .sidebar-item:hover {
+    transform: translateX(4px);
+  }
+  
+  .sidebar-item.active {
+    transform: translateX(8px);
   }
   
   .code-block {
@@ -129,11 +150,30 @@
     border-radius: 12px;
     padding: 2rem;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    transition: box-shadow 0.3s ease;
+    transition: box-shadow 0.3s ease, transform 0.2s ease;
+    transform: translateZ(0);
   }
   
   .content-card:hover {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    transform: translateY(-2px);
+  }
+  
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.6s ease-out forwards;
+  }
+  
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .stagger-animation {
+    animation-delay: var(--stagger-delay, 0ms);
   }
 }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { slideData, SlideData, SlideContent } from "@/lib/slide-data";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,38 +36,78 @@ const iconMap = {
 export function SlideDeck() {
   const [activeSection, setActiveSection] = useState(0);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const totalSections = slideData.length;
 
-  const scrollToSection = (sectionIndex: number) => {
+  const scrollToSection = useCallback((sectionIndex: number) => {
     const element = sectionRefs.current[sectionIndex];
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
       setActiveSection(sectionIndex);
     }
-  };
+  }, []);
 
-  // Scroll spy to track active section
+  // Throttled scroll handler for better performance
+  const throttledScrollHandler = useCallback(() => {
+    const scrollPosition = window.scrollY + 100;
+    
+    for (let i = sectionRefs.current.length - 1; i >= 0; i--) {
+      const element = sectionRefs.current[i];
+      if (element && element.offsetTop <= scrollPosition) {
+        setActiveSection(i);
+        break;
+      }
+    }
+  }, []);
+
+  // Intersection Observer for better scroll performance
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const index = sectionRefs.current.indexOf(entry.target as HTMLDivElement);
+            if (index !== -1) {
+              setActiveSection(index);
+            }
+          }
+        });
+      },
+      {
+        threshold: 0.3,
+        rootMargin: '-100px 0px -50% 0px'
+      }
+    );
+
+    sectionRefs.current.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Track scroll progress
   useEffect(() => {
     const handleScroll = () => {
-      const scrollPosition = window.scrollY + 100;
-      
-      for (let i = sectionRefs.current.length - 1; i >= 0; i--) {
-        const element = sectionRefs.current[i];
-        if (element && element.offsetTop <= scrollPosition) {
-          setActiveSection(i);
-          break;
-        }
-      }
+      const scrollTop = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = (scrollTop / docHeight) * 100;
+      setScrollProgress(Math.min(progress, 100));
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Keyboard navigation
+  // Enhanced keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input or textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
       if (e.key === 'ArrowDown' || e.key === ' ') {
         e.preventDefault();
         if (activeSection < totalSections - 1) {
@@ -78,14 +118,23 @@ export function SlideDeck() {
         if (activeSection > 0) {
           scrollToSection(activeSection - 1);
         }
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        scrollToSection(0);
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        scrollToSection(totalSections - 1);
       } else if (e.key === 'Escape') {
         setIsSidebarOpen(false);
+      } else if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        setIsSidebarOpen(!isSidebarOpen);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeSection, totalSections]);
+  }, [activeSection, totalSections, isSidebarOpen, scrollToSection]);
 
   const renderSlideContent = (content: SlideContent) => {
     switch (content.type) {
@@ -358,6 +407,18 @@ export function SlideDeck() {
             <X className="h-4 w-4" />
           </Button>
         </div>
+        <div className="px-4 py-2 border-b bg-gray-50">
+          <div className="flex justify-between text-xs text-gray-600 mb-1">
+            <span>Progress</span>
+            <span>{Math.round(scrollProgress)}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-[color:var(--riscv-primary)] h-2 rounded-full transition-all duration-300"
+              style={{ width: `${scrollProgress}%` }}
+            />
+          </div>
+        </div>
         <ScrollArea className="flex-1 h-full sidebar-nav">
           <div className="p-4">
             <nav className="space-y-2">
@@ -365,8 +426,8 @@ export function SlideDeck() {
                 <button
                   key={index}
                   onClick={() => scrollToSection(index)}
-                  className={`w-full text-left p-3 rounded-lg hover:bg-gray-100 transition-colors ${
-                    activeSection === index ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                  className={`w-full text-left p-3 rounded-lg hover:bg-gray-100 sidebar-item ${
+                    activeSection === index ? 'bg-blue-50 border-l-4 border-blue-500 active' : ''
                   }`}
                 >
                   <div className="font-medium text-[color:var(--riscv-primary)] text-sm">
@@ -396,18 +457,23 @@ export function SlideDeck() {
       <div className="flex-1 lg:ml-0">
         {/* Mobile header */}
         <div className="sticky top-0 z-30 bg-white shadow-sm p-4 lg:hidden">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsSidebarOpen(true)}
-          >
-            <Menu className="h-4 w-4 mr-2" />
-            Table of Contents
-          </Button>
+          <div className="flex justify-between items-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <Menu className="h-4 w-4 mr-2" />
+              Table of Contents
+            </Button>
+            <div className="text-xs text-gray-500">
+              Press 'M' to toggle menu
+            </div>
+          </div>
         </div>
 
         {/* Document content */}
-        <div className="max-w-4xl mx-auto px-4 py-8 lg:py-16">
+        <div className="max-w-4xl mx-auto px-4 py-8 lg:py-16 smooth-scroll">
           {/* Title Section */}
           <div 
             ref={el => sectionRefs.current[0] = el}
@@ -462,7 +528,11 @@ export function SlideDeck() {
               </div>
               <div className="space-y-6">
                 {section.content.map((contentItem, contentIndex) => (
-                  <div key={contentIndex} className="content-card">
+                  <div 
+                    key={contentIndex} 
+                    className="content-card fade-in stagger-animation"
+                    style={{ '--stagger-delay': `${contentIndex * 100}ms` } as React.CSSProperties}
+                  >
                     {renderSlideContent(contentItem)}
                   </div>
                 ))}

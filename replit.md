@@ -30,11 +30,12 @@ UI/UX preferences: Modern, non-slide deck interactive design with left sidebar t
 
 ### Key Components
 
-#### Presentation System
-- **Slide Management**: Centralized slide data with structured content types
-- **Navigation**: Previous/next slide controls with keyboard support
-- **Table of Contents**: Interactive slide overview with direct navigation
-- **Responsive Design**: Mobile-optimized layout with touch gestures
+#### Document Reader System
+- **Smooth Scrolling**: Hardware-accelerated scrolling with Intersection Observer API
+- **Sidebar Navigation**: Fixed left sidebar with table of contents and progress indicator
+- **Keyboard Shortcuts**: Arrow keys, spacebar, Home/End, and 'M' for menu toggle
+- **Performance Optimized**: Throttled scroll events, CSS transforms, and staggered animations
+- **Responsive Design**: Mobile-optimized layout with collapsible sidebar
 
 #### Content Types
 - Text blocks with formatting
