@@ -13,31 +13,7 @@ A modern, interactive web application that presents Paul Sherman's RISC-V hands-
 - **🔍 Syntax Highlighting** - Code blocks with RISC-V assembly syntax highlighting
 - **⌨️ Keyboard Navigation** - Arrow keys and spacebar for easy navigation
 
-## 🚀 Quick Start
 
-### Prerequisites
-- Node.js 20 or higher
-- npm or yarn
-
-### Installation
-
-1. Clone the repository
-```bash
-git clone <repository-url>
-cd risc-v-workshop
-```
-
-2. Install dependencies
-```bash
-npm install
-```
-
-3. Start the development server
-```bash
-npm run dev
-```
-
-4. Open your browser to `http://localhost:5000`
 
 ## 🏗️ Architecture
 
