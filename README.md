@@ -1,6 +1,6 @@
 # RISC-V Workshop - Interactive Document Reader
 
-A modern, interactive web application that presents the RISC-V hands-on workshop content in a beautiful document reader interface with smooth navigation and responsive design.
+A modern, interactive web application that presents Paul Sherman's RISC-V hands-on workshop content in a beautiful document reader interface with smooth navigation and responsive design.
 
 ## ✨ Features
 
