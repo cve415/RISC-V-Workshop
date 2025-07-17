@@ -71,8 +71,34 @@
     font-family: 'Roboto Mono', monospace;
   }
   
-  .slide-container {
-    transition: transform 0.3s ease-in-out;
+  .document-reader {
+    scroll-behavior: smooth;
+  }
+  
+  .sidebar-nav {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  }
+  
+  .sidebar-nav::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .sidebar-nav::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .sidebar-nav::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+  }
+  
+  .sidebar-nav::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(156, 163, 175, 0.7);
+  }
+  
+  .content-section {
+    scroll-margin-top: 2rem;
   }
   
   .code-block {
@@ -98,17 +124,16 @@
     color: hsl(0, 0%, 62%);
   }
   
-  .slide-indicator {
-    transition: all 0.3s ease;
+  .content-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: box-shadow 0.3s ease;
   }
   
-  .slide-indicator.active {
-    background: var(--riscv-primary);
-    transform: scale(1.2);
-  }
-  
-  .slide {
-    min-height: calc(100vh - 5rem);
+  .content-card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   }
 }
 

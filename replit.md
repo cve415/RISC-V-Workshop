@@ -2,11 +2,12 @@
 
 ## Overview
 
-This is a full-stack web application built to deliver an interactive RISC-V hands-on workshop presentation. The application features a slide-based presentation system with navigation controls, table of contents, and responsive design optimized for educational content delivery.
+This is a full-stack web application built to deliver an interactive RISC-V hands-on workshop presentation. The application features a modern document reader interface with a left sidebar table of contents, smooth scrolling navigation, and responsive design optimized for educational content delivery.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+UI/UX preferences: Modern, non-slide deck interactive design with left sidebar table of contents.
 
 ## System Architecture
 

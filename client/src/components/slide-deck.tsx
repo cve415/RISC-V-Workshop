@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
-import { SlideNavigation } from "./slide-navigation";
-import { TableOfContents } from "./table-of-contents";
+import { useState, useEffect, useRef } from "react";
 import { slideData, SlideData, SlideContent } from "@/lib/slide-data";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Brain, 
   Cpu, 
@@ -14,7 +14,9 @@ import {
   GraduationCap, 
   List, 
   Database,
-  ArrowRight
+  ArrowRight,
+  Menu,
+  X
 } from "lucide-react";
 
 const iconMap = {
@@ -32,83 +34,58 @@ const iconMap = {
 };
 
 export function SlideDeck() {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isTocOpen, setIsTocOpen] = useState(false);
-  const totalSlides = slideData.length;
+  const [activeSection, setActiveSection] = useState(0);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const totalSections = slideData.length;
 
-  const nextSlide = () => {
-    if (currentSlide < totalSlides - 1) {
-      setCurrentSlide(currentSlide + 1);
+  const scrollToSection = (sectionIndex: number) => {
+    const element = sectionRefs.current[sectionIndex];
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setActiveSection(sectionIndex);
     }
   };
 
-  const prevSlide = () => {
-    if (currentSlide > 0) {
-      setCurrentSlide(currentSlide - 1);
-    }
-  };
+  // Scroll spy to track active section
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY + 100;
+      
+      for (let i = sectionRefs.current.length - 1; i >= 0; i--) {
+        const element = sectionRefs.current[i];
+        if (element && element.offsetTop <= scrollPosition) {
+          setActiveSection(i);
+          break;
+        }
+      }
+    };
 
-  const goToSlide = (slideIndex: number) => {
-    setCurrentSlide(slideIndex);
-  };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === ' ') {
+      if (e.key === 'ArrowDown' || e.key === ' ') {
         e.preventDefault();
-        nextSlide();
-      } else if (e.key === 'ArrowLeft') {
+        if (activeSection < totalSections - 1) {
+          scrollToSection(activeSection + 1);
+        }
+      } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        prevSlide();
+        if (activeSection > 0) {
+          scrollToSection(activeSection - 1);
+        }
       } else if (e.key === 'Escape') {
-        setIsTocOpen(false);
+        setIsSidebarOpen(false);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentSlide]);
-
-  // Touch/swipe support
-  useEffect(() => {
-    let startX = 0;
-    let startY = 0;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      startX = e.touches[0].clientX;
-      startY = e.touches[0].clientY;
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (!startX || !startY) return;
-
-      const endX = e.changedTouches[0].clientX;
-      const endY = e.changedTouches[0].clientY;
-
-      const diffX = startX - endX;
-      const diffY = startY - endY;
-
-      if (Math.abs(diffX) > Math.abs(diffY)) {
-        if (diffX > 50) {
-          nextSlide();
-        } else if (diffX < -50) {
-          prevSlide();
-        }
-      }
-
-      startX = 0;
-      startY = 0;
-    };
-
-    document.addEventListener('touchstart', handleTouchStart);
-    document.addEventListener('touchend', handleTouchEnd);
-
-    return () => {
-      document.removeEventListener('touchstart', handleTouchStart);
-      document.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [currentSlide]);
+  }, [activeSection, totalSections]);
 
   const renderSlideContent = (content: SlideContent) => {
     switch (content.type) {
@@ -225,12 +202,12 @@ export function SlideDeck() {
         return (
           <div className="space-y-4">
             {content.data.items.map((item: any, index: number) => (
-              <div key={index} className="bg-white rounded-lg shadow-lg p-6">
+              <div key={index} className="bg-gradient-to-r from-blue-50 to-white rounded-lg p-6 border-l-4 border-[color:var(--riscv-primary)]">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-semibold text-[color:var(--riscv-secondary)]">
                     {item.title}
                   </h3>
-                  <span className="text-[color:var(--riscv-accent)] font-medium">
+                  <span className="text-[color:var(--riscv-accent)] font-bold bg-[color:var(--riscv-accent)] bg-opacity-10 px-3 py-1 rounded-full text-sm">
                     {item.year}
                   </span>
                 </div>
@@ -244,19 +221,19 @@ export function SlideDeck() {
 
       case 'grid':
         return (
-          <div className={`grid lg:grid-cols-${content.data.columns} gap-8`}>
+          <div className={`grid lg:grid-cols-${content.data.columns} gap-6`}>
             {content.data.items.map((item: any, index: number) => (
-              <div key={index} className="bg-white rounded-lg shadow-lg p-6">
-                <h3 className="text-2xl font-semibold text-[color:var(--riscv-secondary)] mb-4">
+              <div key={index} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <h3 className="text-xl font-semibold text-[color:var(--riscv-secondary)] mb-4">
                   {item.title}
                 </h3>
                 {item.subtitle && (
-                  <p className="text-lg text-gray-700 mb-4">{item.subtitle}</p>
+                  <p className="text-gray-700 mb-4">{item.subtitle}</p>
                 )}
                 {item.content && (
-                  <div className="space-y-3 font-mono text-sm">
+                  <div className="space-y-2 font-mono text-sm">
                     {item.content.map((line: string, lineIndex: number) => (
-                      <div key={lineIndex} className="bg-gray-100 p-3 rounded">
+                      <div key={lineIndex} className="bg-white p-3 rounded border">
                         {line}
                       </div>
                     ))}
@@ -280,7 +257,7 @@ export function SlideDeck() {
                 {item.instructions && (
                   <div className="grid grid-cols-2 gap-2 font-mono text-sm">
                     {item.instructions.map((instruction: string, instrIndex: number) => (
-                      <div key={instrIndex} className="bg-gray-100 p-2 rounded">
+                      <div key={instrIndex} className="bg-white p-2 rounded border">
                         {instruction}
                       </div>
                     ))}
@@ -293,7 +270,7 @@ export function SlideDeck() {
                         <h4 className="font-medium text-sm">{section.title}</h4>
                         <div className="grid grid-cols-2 gap-2 font-mono text-sm">
                           {section.instructions.map((instruction: string, instrIndex: number) => (
-                            <div key={instrIndex} className="bg-gray-100 p-2 rounded">
+                            <div key={instrIndex} className="bg-white p-2 rounded border">
                               {instruction}
                             </div>
                           ))}
@@ -364,97 +341,135 @@ export function SlideDeck() {
     }
   };
 
-  const currentSlideData = slideData[currentSlide];
-
   return (
-    <div className="bg-[color:var(--riscv-slide-bg)] font-inter min-h-screen">
-      <SlideNavigation
-        currentSlide={currentSlide}
-        totalSlides={totalSlides}
-        onPrevious={prevSlide}
-        onNext={nextSlide}
-        onOpenToc={() => setIsTocOpen(true)}
-      />
-
-      <TableOfContents
-        isOpen={isTocOpen}
-        onClose={() => setIsTocOpen(false)}
-        onSlideSelect={goToSlide}
-        currentSlide={currentSlide}
-      />
-
-      <div className="pt-20 pb-8">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="slide-container">
-            <div className="slide min-h-screen flex items-center justify-center">
-              <div className="w-full max-w-5xl">
-                {currentSlide === 0 ? (
-                  <div className="text-center">
-                    <h1 className="text-6xl font-bold text-[color:var(--riscv-primary)] mb-4">
-                      "NU4YOU"
-                    </h1>
-                    <h2 className="text-4xl font-semibold text-[color:var(--riscv-secondary)] mb-8">
-                      RISC-V HANDS-ON WORKSHOP
-                    </h2>
-                    <Card className="max-w-2xl mx-auto">
-                      <CardContent className="pt-6">
-                        <div className="mb-6">
-                          <p className="text-lg text-gray-700 mb-2">Presenters:</p>
-                          <p className="text-xl font-medium text-[color:var(--riscv-primary)]">
-                            Naruemon Rattanakunakorn
-                          </p>
-                          <p className="text-xl font-medium text-[color:var(--riscv-primary)]">
-                            Paul Sherman
-                          </p>
-                        </div>
-                        <div className="border-t pt-6">
-                          <p className="text-gray-600">
-                            20th International Joint Conference on Computer Science and Software Engineering
-                          </p>
-                          <p className="text-gray-600">28th June – 1st July 2023</p>
-                          <p className="text-gray-600">Naresuan University, Pitsanulok, THAILAND</p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                ) : (
-                  <div>
-                    <h2 className="text-4xl font-bold text-[color:var(--riscv-primary)] mb-8 text-center">
-                      {currentSlideData.title}
-                    </h2>
-                    {currentSlideData.subtitle && (
-                      <h3 className="text-2xl font-semibold text-[color:var(--riscv-secondary)] mb-8 text-center">
-                        {currentSlideData.subtitle}
-                      </h3>
-                    )}
-                    <div className="space-y-8">
-                      {currentSlideData.content.map((content, index) => (
-                        <div key={index} className="bg-white rounded-lg shadow-lg p-6">
-                          {renderSlideContent(content)}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+    <div className="bg-[color:var(--riscv-slide-bg)] font-inter min-h-screen flex document-reader">
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-lg transform transition-transform duration-300 ${
+        isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+      } lg:translate-x-0 lg:static lg:inset-0`}>
+        <div className="flex items-center justify-between p-4 border-b">
+          <h2 className="text-xl font-bold text-[color:var(--riscv-primary)]">RISC-V Workshop</h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsSidebarOpen(false)}
+            className="lg:hidden"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
+        <ScrollArea className="flex-1 h-full sidebar-nav">
+          <div className="p-4">
+            <nav className="space-y-2">
+              {slideData.map((slide, index) => (
+                <button
+                  key={index}
+                  onClick={() => scrollToSection(index)}
+                  className={`w-full text-left p-3 rounded-lg hover:bg-gray-100 transition-colors ${
+                    activeSection === index ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                  }`}
+                >
+                  <div className="font-medium text-[color:var(--riscv-primary)] text-sm">
+                    {slide.title}
+                  </div>
+                  {slide.subtitle && (
+                    <div className="text-xs text-gray-600 mt-1">
+                      {slide.subtitle}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </ScrollArea>
       </div>
 
-      {/* Slide Indicators */}
-      <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 no-print">
-        {slideData.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`w-3 h-3 rounded-full cursor-pointer transition-all duration-300 ${
-              index === currentSlide
-                ? 'bg-[color:var(--riscv-primary)] transform scale-125'
-                : 'bg-gray-400 hover:bg-gray-600'
-            }`}
-          />
-        ))}
+      {/* Mobile overlay */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
+      {/* Main content */}
+      <div className="flex-1 lg:ml-0">
+        {/* Mobile header */}
+        <div className="sticky top-0 z-30 bg-white shadow-sm p-4 lg:hidden">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <Menu className="h-4 w-4 mr-2" />
+            Table of Contents
+          </Button>
+        </div>
+
+        {/* Document content */}
+        <div className="max-w-4xl mx-auto px-4 py-8 lg:py-16">
+          {/* Title Section */}
+          <div 
+            ref={el => sectionRefs.current[0] = el}
+            className="mb-16"
+          >
+            <div className="text-center mb-12">
+              <h1 className="text-5xl lg:text-6xl font-bold text-[color:var(--riscv-primary)] mb-4">
+                "NU4YOU"
+              </h1>
+              <h2 className="text-3xl lg:text-4xl font-semibold text-[color:var(--riscv-secondary)] mb-8">
+                RISC-V HANDS-ON WORKSHOP
+              </h2>
+              <Card className="max-w-2xl mx-auto">
+                <CardContent className="pt-6">
+                  <div className="mb-6">
+                    <p className="text-lg text-gray-700 mb-2">Presenters:</p>
+                    <p className="text-xl font-medium text-[color:var(--riscv-primary)]">
+                      Naruemon Rattanakunakorn
+                    </p>
+                    <p className="text-xl font-medium text-[color:var(--riscv-primary)]">
+                      Paul Sherman
+                    </p>
+                  </div>
+                  <div className="border-t pt-6">
+                    <p className="text-gray-600">
+                      20th International Joint Conference on Computer Science and Software Engineering
+                    </p>
+                    <p className="text-gray-600">28th June – 1st July 2023</p>
+                    <p className="text-gray-600">Naresuan University, Pitsanulok, THAILAND</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Content sections */}
+          {slideData.slice(1).map((section, index) => (
+            <div 
+              key={index + 1}
+              ref={el => sectionRefs.current[index + 1] = el}
+              className="mb-16 content-section"
+            >
+              <div className="mb-8">
+                <h2 className="text-3xl lg:text-4xl font-bold text-[color:var(--riscv-primary)] mb-4">
+                  {section.title}
+                </h2>
+                {section.subtitle && (
+                  <h3 className="text-xl lg:text-2xl font-semibold text-[color:var(--riscv-secondary)] mb-6">
+                    {section.subtitle}
+                  </h3>
+                )}
+              </div>
+              <div className="space-y-6">
+                {section.content.map((contentItem, contentIndex) => (
+                  <div key={contentIndex} className="content-card">
+                    {renderSlideContent(contentItem)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
